@@ -211,7 +211,7 @@ CREATE EVENT IF NOT EXISTS analytics.e_learner_logins_active_users
 		--
 		CALL `analytics_procedure_logging_start`('e_learner_logins_active_users');
 		--
-		CALL `p_puzzled_engagement`();
+		CALL `p_learner_logins_active_users`();
 		--
 		CALL `analytics_procedure_logging_stop`('e_learner_logins_active_users');
 		--
