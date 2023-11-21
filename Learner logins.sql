@@ -1,4 +1,22 @@
 -- Code for tableau view to look at YOY growth active users for both Mobile and Web Apps
+DROP PROCEDURE IF EXISTS p_learner_logins_active_users;
+
+CREATE PROCEDURE p_learner_logins_active_users()
+	COMMENT '-name-PG-name--desc-For looking at learner logins through both mobile and web apps-desc-'
+BEGIN
+	-- Create an exit handler for when an error occurs in procedure
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+		BEGIN
+			-- Get the error displayed
+			GET DIAGNOSTICS CONDITION 1
+				@sql_state = RETURNED_SQLSTATE,
+				@errno = MYSQL_ERRNO,
+				@errtxt = MESSAGE_TEXT;
+-- Write the displayed error to the procedure_error_log table
+			CALL analytics.p_error_logger('p_learner_logins_active_users');
+-- Resignal previous error to db
+			RESIGNAL;
+		END;
 
 -- Table with mobile users (teachers) learner logins
 
@@ -176,3 +194,25 @@ SELECT 0 AS app_type,
 FROM twinkl.twinkl_pupil_download_log
 WHERE type_id = 3
 GROUP BY month;
+
+CALL p_learner_logins_active_users();
+
+-- Event code
+
+CREATE EVENT IF NOT EXISTS analytics.e_learner_logins_active_users
+	ON SCHEDULE
+		EVERY 1 DAY
+			STARTS CURRENT_TIMESTAMP
+	ON COMPLETION PRESERVE
+	DISABLE -- ENABLE
+	COMMENT '-name-PG-name-'
+	DO
+	BEGIN
+		--
+		CALL `analytics_procedure_logging_start`('e_learner_logins_active_users');
+		--
+		CALL `p_puzzled_engagement`();
+		--
+		CALL `analytics_procedure_logging_stop`('e_learner_logins_active_users');
+		--
+	END;
